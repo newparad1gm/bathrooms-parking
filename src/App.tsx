@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div style={{ height: "100%", width: "100%" }}>
-      <Wrapper apiKey="WIPE KEY" render={render}>
+      <Wrapper apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY!} render={render}>
         <Map
           center={center}
           onClick={onClick}
@@ -95,7 +95,6 @@ const Map: React.FC<MapProperties> = ({
       <div ref={ref} style={style} />
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          // set the map prop on the child component
           return React.cloneElement(child, { map });
         }
       })}
