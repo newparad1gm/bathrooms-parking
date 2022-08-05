@@ -13,7 +13,6 @@ function App() {
   });
 
   const onClick = (e: google.maps.MapMouseEvent) => {
-    // avoid directly mutating state
     setClicks([...clicks, e.latLng!]);
   };
 
@@ -25,7 +24,7 @@ function App() {
 
   return (
     <div style={{ height: "100%", width: "100%" }}>
-      <Wrapper apiKey="AIzaSyDN1nl4JLsBqg0X7yE-6vsen_0wv2QRYxA" render={render}>
+      <Wrapper apiKey="WIPE KEY" render={render}>
         <Map
           center={center}
           onClick={onClick}
