@@ -1,26 +1,167 @@
 import React from 'react';
-import logo from './logo.svg';
+import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import './App.css';
+import { createCustomEqual, TypeEqualityComparator, deepEqual } from "fast-equals";
+import { isLatLngLiteral } from "@googlemaps/typescript-guards";
 
 function App() {
+  const [clicks, setClicks] = React.useState<google.maps.LatLng[]>([]);
+  const [zoom, setZoom] = React.useState(10); // initial zoom
+  const [center, setCenter] = React.useState<google.maps.LatLngLiteral>({
+    lat: 40.7128,
+    lng: -74.0060
+  });
+
+  const onClick = (e: google.maps.MapMouseEvent) => {
+    // avoid directly mutating state
+    setClicks([...clicks, e.latLng!]);
+  };
+
+  const onIdle = (m: google.maps.Map) => {
+    console.log("onIdle");
+    setZoom(m.getZoom()!);
+    setCenter(m.getCenter()!.toJSON());
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+    <div style={{ height: "100%", width: "100%" }}>
+      <Wrapper apiKey="AIzaSyDN1nl4JLsBqg0X7yE-6vsen_0wv2QRYxA" render={render}>
+        <Map
+          center={center}
+          onClick={onClick}
+          onIdle={onIdle}
+          zoom={zoom}
+          style={{ position: "relative", display: "block", height: "100%", width: "100%" }}
         >
-          Learn React
-        </a>
-      </header>
+          {clicks.map((latLng, i) => (
+            <Marker key={i} position={latLng} />
+          ))}
+        </Map>
+      </Wrapper>
     </div>
   );
+}
+
+const render = (status: Status) => {
+  return <h1>{status}</h1>;
+};
+
+interface MapProperties extends google.maps.MapOptions {
+  style: { [key: string]: string };
+  onClick?: (e: google.maps.MapMouseEvent) => void;
+  onIdle?: (map: google.maps.Map) => void;
+  children?: React.ReactNode;
+}
+
+const Map: React.FC<MapProperties> = ({
+  onClick,
+  onIdle,
+  children,
+  style,
+  ...options
+}) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [map, setMap] = React.useState<google.maps.Map>();
+
+  React.useEffect(() => {
+    if (ref.current && !map) {
+      setMap(new window.google.maps.Map(ref.current, {}));
+    }
+  }, [ref, map]);
+
+  useDeepCompareEffectForMaps(() => {
+    if (map) {
+      map.setOptions(options);
+    }
+  }, [map, options]);
+
+  React.useEffect(() => {
+    if (map) {
+      ["click", "idle"].forEach((eventName) =>
+        google.maps.event.clearListeners(map, eventName)
+      );
+
+      if (onClick) {
+        map.addListener("click", onClick);
+      }
+
+      if (onIdle) {
+        map.addListener("idle", () => onIdle(map));
+      }
+    }
+  }, [map, onClick, onIdle]);
+
+  return (
+    <>
+      <div ref={ref} style={style} />
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          // set the map prop on the child component
+          return React.cloneElement(child, { map });
+        }
+      })}
+    </>
+  )
+}
+
+const areMapsEqual: TypeEqualityComparator<any, undefined> = (
+  a,
+  b,
+) => {
+  if (
+    isLatLngLiteral(a) ||
+    a instanceof google.maps.LatLng ||
+    isLatLngLiteral(b) ||
+    b instanceof google.maps.LatLng
+  ) {
+    return new google.maps.LatLng(a).equals(new google.maps.LatLng(b));
+  }
+  return deepEqual(a, b);
+};
+
+const deepCompareEqualsForMaps = createCustomEqual((deepEqual) => ({
+  areMapsEqual,
+}));
+
+function useDeepCompareMemoize(value: any) {
+  const ref = React.useRef();
+
+  if (!deepCompareEqualsForMaps(value, ref.current)) {
+    ref.current = value;
+  }
+
+  return ref.current;
+}
+
+function useDeepCompareEffectForMaps(
+  callback: React.EffectCallback,
+  dependencies: any[]
+) {
+  React.useEffect(callback, dependencies.map(useDeepCompareMemoize));
+}
+
+const Marker: React.FC<google.maps.MarkerOptions> = (options) => {
+  const [marker, setMarker] = React.useState<google.maps.Marker>();
+
+  React.useEffect(() => {
+    if (!marker) {
+      setMarker(new google.maps.Marker());
+    }
+
+    return () => {
+      if (marker) {
+        marker.setMap(null);
+      }
+    };
+  }, [marker]);
+
+  React.useEffect(() => {
+    if (marker) {
+      marker.setOptions(options);
+    }
+  }, [marker, options]);
+
+  return null;
 }
 
 export default App;
