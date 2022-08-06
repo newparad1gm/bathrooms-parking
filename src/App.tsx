@@ -3,6 +3,7 @@ import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import './App.css';
 import { createCustomEqual, TypeEqualityComparator, deepEqual } from "fast-equals";
 import { isLatLngLiteral } from "@googlemaps/typescript-guards";
+import { Data } from './Data';
 
 function App() {
   const [clicks, setClicks] = React.useState<google.maps.LatLng[]>([]);
@@ -22,6 +23,8 @@ function App() {
     setCenter(m.getCenter()!.toJSON());
   };
 
+  const data = new Data();
+
   return (
     <div style={{ height: "100%", width: "100%" }}>
       <Wrapper apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY!} render={render}>
@@ -32,9 +35,16 @@ function App() {
           zoom={zoom}
           style={{ position: "relative", display: "block", height: "100%", width: "100%" }}
         >
-          {clicks.map((latLng, i) => (
-            <Marker key={i} position={latLng} />
-          ))}
+        {data.markers != null &&
+          data.markers.map(marker => (
+            <Marker
+                key={marker.id}
+                position={marker.latLng}
+            />
+        ))}
+        {clicks.map((latLng, i) => (
+          <Marker key={i} position={latLng} />
+        ))}
         </Map>
       </Wrapper>
     </div>
@@ -139,11 +149,17 @@ function useDeepCompareEffectForMaps(
 }
 
 const Marker: React.FC<google.maps.MarkerOptions> = (options) => {
-  const [marker, setMarker] = React.useState<google.maps.Marker>();
+  let [marker, setMarker] = React.useState<google.maps.Marker>();
 
   React.useEffect(() => {
     if (!marker) {
-      setMarker(new google.maps.Marker());
+      marker = new google.maps.Marker();
+      marker.addListener("click", () => { alert('test') });
+      setMarker(marker);
+    }
+
+    if (marker) {
+      marker.setOptions(options);
     }
 
     return () => {
@@ -151,12 +167,6 @@ const Marker: React.FC<google.maps.MarkerOptions> = (options) => {
         marker.setMap(null);
       }
     };
-  }, [marker]);
-
-  React.useEffect(() => {
-    if (marker) {
-      marker.setOptions(options);
-    }
   }, [marker, options]);
 
   return null;
