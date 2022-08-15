@@ -11,6 +11,14 @@ class Data {
         };
         test.info = `<b>Test</b><br/>This is just a test`;
         this.markers.push(test);
+        let test2 = new InfoMarker();
+        test2.id = 2;
+        test2.latLng = {
+            lat: 41,
+            lng: -74.010
+        };
+        test2.info = `<b>Test2</b><br/>This is just a test`;
+        this.markers.push(test2);
     }
 
     getInfo(): string {
