@@ -27,9 +27,10 @@ function Map() {
         setClicks([...clicks, e.latLng!]);
     };
 
-    const onAdd = (marker: google.maps.Marker) => {
+    const onAdd = (marker: google.maps.Marker, markerIndex: any) => {
         newMarker && newMarker.setMap(null);
         newMarker = marker;
+        setActiveMarker(markerIndex);
     }
 
     return (
@@ -49,13 +50,19 @@ function Map() {
                 >
                     {activeMarker === id ? (
                         <InfoWindow onCloseClick={() => setActiveMarker(null)}>
-                        <div>{info}</div>
+                            <div>{info}</div>
                         </InfoWindow>
                     ) : null}
                 </MarkerF>
             ))}
             {clicks.map((latLng, i) => (
-                <MarkerF onLoad={onAdd} key={i} position={latLng} />
+                <MarkerF onLoad={(marker) => onAdd(marker, i)} key={i} position={latLng} >
+                    {activeMarker === i ? (
+                        <InfoWindow>
+                            <h2>Add Parking Spot or Bathroom Marker</h2>
+                        </InfoWindow>
+                    ) : null}
+                </MarkerF>
             ))}
         </GoogleMap>
     );
