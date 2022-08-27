@@ -1,12 +1,11 @@
 import React from 'react';
 import './App.css';
 import { GoogleMap, InfoWindow, Marker, MarkerF } from '@react-google-maps/api';
-import { Data } from './Data';
+import { InfoMarker } from './Data';
 
 let newMarker: google.maps.Marker | undefined = undefined;
-const data = new Data();
 
-function Map() {
+function Map(props: { data: any }) {
     const [activeMarker, setActiveMarker] = React.useState(null);
     const [clicks, setClicks] = React.useState<google.maps.LatLng[]>([]);
     const [zoom, setZoom] = React.useState(10); // initial zoom
@@ -40,8 +39,8 @@ function Map() {
             center={center}
             zoom={zoom}
         >
-            {data.markers.map(({ 
-                id, latLng, info 
+            {(props.data as InfoMarker[]).map(({ 
+                id, latLng, data
             }) => (
                 <MarkerF
                     key={id}
@@ -50,7 +49,7 @@ function Map() {
                 >
                     {activeMarker === id ? (
                         <InfoWindow onCloseClick={() => setActiveMarker(null)}>
-                            <div>{info}</div>
+                            <div>{data}</div>
                         </InfoWindow>
                     ) : null}
                 </MarkerF>
