@@ -1,90 +1,98 @@
 import React from 'react';
 import './App.css';
-import { GoogleMap, InfoWindow, Marker, MarkerF } from '@react-google-maps/api';
-import { InfoMarker } from './Data';
+import { createCustomEqual, TypeEqualityComparator, deepEqual } from 'fast-equals';
+import { isLatLngLiteral } from '@googlemaps/typescript-guards';
 
-let newMarker: google.maps.Marker | undefined = undefined;
-
-function Map(props: { data: any }) {
-    const [activeMarker, setActiveMarker] = React.useState(null);
-    const [clicks, setClicks] = React.useState<google.maps.LatLng[]>([]);
-    const [zoom, setZoom] = React.useState(15); // initial zoom
-    const [center, setCenter] = React.useState<google.maps.LatLngLiteral>({
-        lat: 40.7128,
-        lng: -74.0060
-    });
-
-    const handleActiveMarker = (marker: any) => {
-        if (marker === activeMarker) {
-            return;
+interface MapProps extends google.maps.MapOptions {
+    style: { [key: string]: string };
+    onClick?: (e: google.maps.MapMouseEvent) => void;
+    onIdle?: (map: google.maps.Map) => void;
+    children?: React.ReactNode;
+}
+  
+const Map: React.FC<MapProps> = ({
+    onClick,
+    onIdle,
+    children,
+    style,
+    ...options
+}) => {
+    const ref = React.useRef<HTMLDivElement>(null);
+    const [map, setMap] = React.useState<google.maps.Map>();
+  
+    React.useEffect(() => {
+        if (ref.current && !map) {
+            setMap(new window.google.maps.Map(ref.current, {}));
         }
-        setActiveMarker(marker);
-    };
-
-    const onClick = (e: google.maps.MapMouseEvent) => {
-        setActiveMarker(null);
-        setClicks([...clicks, e.latLng!]);
-    };
-
-    const onAdd = (marker: google.maps.Marker, markerIndex: any) => {
-        removeNew();
-        newMarker = marker;
-        setActiveMarker(markerIndex);
-    }
-
-    const removeNew = () => {
-        newMarker && newMarker.setMap(null);
-        newMarker = undefined;
-    }
-
-    let newMarkerText = '';
-    const handleChange = (event: any) => {
-        newMarkerText = event.target.value;
-    }
-
-    const handleClick = () => {
-        console.log(newMarkerText);
-    }
-
+    }, [ref, map]);
+  
+    useDeepCompareEffectForMaps(() => {
+        if (map) {
+            map.setOptions(options);
+        }
+    }, [map, options]);
+  
+    React.useEffect(() => {
+        if (map) {
+            ['click', 'idle'].forEach((eventName) =>
+                google.maps.event.clearListeners(map, eventName)
+            );
+    
+            if (onClick) {
+                map.addListener('click', onClick);
+            }
+    
+            if (onIdle) {
+                map.addListener('idle', () => onIdle(map));
+            }
+        }
+    }, [map, onClick, onIdle]);
+  
     return (
-        <GoogleMap
-            onClick={onClick}
-            mapContainerStyle={{ width: "100vw", height: "100vh" }}
-            center={center}
-            zoom={zoom}
-        >
-            {(props.data as InfoMarker[]).map(({ 
-                id, latLng, data
-            }) => (
-                <MarkerF
-                    key={id}
-                    position={latLng}
-                    onClick={() => handleActiveMarker(id)}
-                >
-                    {activeMarker === id ? (
-                        <InfoWindow onCloseClick={() => setActiveMarker(null)}>
-                            <div>{data}</div>
-                        </InfoWindow>
-                    ) : null}
-                </MarkerF>
-            ))}
-            {clicks.map((latLng, i) => (
-                <MarkerF onLoad={(marker) => onAdd(marker, i)} key={i} position={latLng} >
-                    {activeMarker === i ? (
-                        <InfoWindow onCloseClick={() => removeNew()}>
-                            <div>
-                                <h3>Add Parking Spot or Bathroom Marker</h3>
-                                <textarea
-                                    onChange={handleChange}
-                                />
-                                <button onClick={handleClick}>Save</button>
-                            </div>
-                        </InfoWindow>
-                    ) : null}
-                </MarkerF>
-            ))}
-        </GoogleMap>
+        <>
+            <div ref={ref} style={style} />
+            {React.Children.map(children, (child) => {
+                if (React.isValidElement(child)) {
+                    // set the map prop on the child component
+                    return React.cloneElement(child, { map });
+                }
+            })}
+        </>
     );
+};
+  
+const areMapsEqual: TypeEqualityComparator<any, undefined> = (
+    a,
+    b,
+) => {
+    if (
+    isLatLngLiteral(a) || a instanceof google.maps.LatLng ||
+    isLatLngLiteral(b) || b instanceof google.maps.LatLng
+    ) {
+        return new google.maps.LatLng(a).equals(new google.maps.LatLng(b));
+    }
+        return deepEqual(a, b);
+};
+
+const deepCompareEqualsForMaps = createCustomEqual((deepEqual) => ({
+    areMapsEqual,
+}));
+
+function useDeepCompareMemoize(value: any) {
+    const ref = React.useRef();
+  
+    if (!deepCompareEqualsForMaps(value, ref.current)) {
+        ref.current = value;
+    }
+  
+    return ref.current;
+}
+  
+function useDeepCompareEffectForMaps(
+    callback: React.EffectCallback,
+    dependencies: any[]
+) {
+    React.useEffect(callback, dependencies.map(useDeepCompareMemoize));
 }
 
 export default Map;
