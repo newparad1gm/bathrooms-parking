@@ -8,7 +8,7 @@ let newMarker: google.maps.Marker | undefined = undefined;
 function Map(props: { data: any }) {
     const [activeMarker, setActiveMarker] = React.useState(null);
     const [clicks, setClicks] = React.useState<google.maps.LatLng[]>([]);
-    const [zoom, setZoom] = React.useState(10); // initial zoom
+    const [zoom, setZoom] = React.useState(15); // initial zoom
     const [center, setCenter] = React.useState<google.maps.LatLngLiteral>({
         lat: 40.7128,
         lng: -74.0060
@@ -27,9 +27,23 @@ function Map(props: { data: any }) {
     };
 
     const onAdd = (marker: google.maps.Marker, markerIndex: any) => {
-        newMarker && newMarker.setMap(null);
+        removeNew();
         newMarker = marker;
         setActiveMarker(markerIndex);
+    }
+
+    const removeNew = () => {
+        newMarker && newMarker.setMap(null);
+        newMarker = undefined;
+    }
+
+    let newMarkerText = '';
+    const handleChange = (event: any) => {
+        newMarkerText = event.target.value;
+    }
+
+    const handleClick = () => {
+        console.log(newMarkerText);
     }
 
     return (
@@ -57,8 +71,14 @@ function Map(props: { data: any }) {
             {clicks.map((latLng, i) => (
                 <MarkerF onLoad={(marker) => onAdd(marker, i)} key={i} position={latLng} >
                     {activeMarker === i ? (
-                        <InfoWindow>
-                            <h2>Add Parking Spot or Bathroom Marker</h2>
+                        <InfoWindow onCloseClick={() => removeNew()}>
+                            <div>
+                                <h3>Add Parking Spot or Bathroom Marker</h3>
+                                <textarea
+                                    onChange={handleChange}
+                                />
+                                <button onClick={handleClick}>Save</button>
+                            </div>
                         </InfoWindow>
                     ) : null}
                 </MarkerF>
