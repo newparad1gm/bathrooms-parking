@@ -19,8 +19,8 @@ const App: React.FC = () => {
 	const [newMarkers, setNewMarkers] = useState<InfoMarker[]>([]);
 
 	const onClick = async (e: google.maps.MapMouseEvent) => {
-		const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
-		let geohash = geofire.geohashForLocation([lat, lng]);
+	const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
+	let geohash = geofire.geohashForLocation([lat, lng]);
 		setNewMarkers([...newMarkers, new InfoMarker((-(newMarkers.length+1)).toString(), lat, lng, geohash)]);
 		//return data.addMarker(e.latLng?.lat()!, e.latLng?.lng()!, 'Test');
 	};
@@ -45,20 +45,20 @@ const App: React.FC = () => {
 					zoom={zoom}
 					style={{ flexGrow: "1", height: "100%" }}
 				>
-					{ 
-						newMarkers.map(({ 
-							id, latLng
-						}) => (
-							<Marker key={id} position={latLng}/>
-						))
-					}
-					{ 
-						markers.map(({ 
-							id, latLng
-						}) => (
-							<Marker key={id} position={latLng} data={"Test"}/>
-						))
-					}
+				{ 
+					newMarkers.map(({ 
+					id, latLng
+					}) => (
+					<Marker key={id} position={latLng}/>
+					))
+				}
+				{ 
+					markers.map(({ 
+					id, latLng
+					}) => (
+					<Marker key={id} position={latLng} data={"Test"}/>
+					))
+				}
 				</Map>
 				<Form
 					zoom={zoom}
