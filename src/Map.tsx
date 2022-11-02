@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { createCustomEqual, TypeEqualityComparator, deepEqual } from 'fast-equals';
 import { isLatLngLiteral } from '@googlemaps/typescript-guards';
 
 interface MapProps extends google.maps.MapOptions {
     style: { [key: string]: string };
+    mapRef: React.MutableRefObject<google.maps.Map | undefined>;
     onClick?: (e: google.maps.MapMouseEvent) => void;
     onIdle?: (map: google.maps.Map) => void;
     children?: React.ReactNode;
@@ -12,17 +13,20 @@ interface MapProps extends google.maps.MapOptions {
   
 const Map: React.FC<MapProps> = ({
     onClick,
+    mapRef,
     onIdle,
     children,
     style,
     ...options
 }) => {
-    const ref = React.useRef<HTMLDivElement>(null);
-    const [map, setMap] = React.useState<google.maps.Map>();
+    const ref = useRef<HTMLDivElement>(null);
+    const [map, setMap] = useState<google.maps.Map>();
   
-    React.useEffect(() => {
+    useEffect(() => {
         if (ref.current && !map) {
-            setMap(new window.google.maps.Map(ref.current, {}));
+            const thisMap = new window.google.maps.Map(ref.current, {});
+            setMap(thisMap);
+            mapRef.current = thisMap;
         }
     }, [ref, map]);
   
@@ -32,7 +36,7 @@ const Map: React.FC<MapProps> = ({
         }
     }, [map, options]);
   
-    React.useEffect(() => {
+    useEffect(() => {
         if (map) {
             ['click', 'idle'].forEach((eventName) =>
                 google.maps.event.clearListeners(map, eventName)
@@ -92,7 +96,7 @@ function useDeepCompareEffectForMaps(
     callback: React.EffectCallback,
     dependencies: any[]
 ) {
-    React.useEffect(callback, dependencies.map(useDeepCompareMemoize));
+    useEffect(callback, dependencies.map(useDeepCompareMemoize));
 }
 
 export default Map;

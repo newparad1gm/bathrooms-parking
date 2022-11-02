@@ -1,14 +1,14 @@
-import * as React from "react";
-import { InfoMarker } from './Data';
+import React, { useEffect, useState, useRef, createElement } from "react";
+import ReactDOMServer from 'react-dom/server';
 
 interface InfoMarkerOptions extends google.maps.MarkerOptions {
-    data: string
+    data?: string
 }
 
 const Marker: React.FC<InfoMarkerOptions> = (options) => {
-    const [marker, setMarker] = React.useState<google.maps.Marker>();
+    const [marker, setMarker] = useState<google.maps.Marker>();
   
-    React.useEffect(() => {
+    useEffect(() => {
         if (!marker) {
             setMarker(new google.maps.Marker());
         }
@@ -21,11 +21,15 @@ const Marker: React.FC<InfoMarkerOptions> = (options) => {
         };
     }, [marker]);
 
+    let content = options.data;
+    if (!options.data) {
+        content = 'Text:  <input type="text" id="textInput" size="31" maxlength="31" tabindex="1"/>' + '<input type="button" id="inputButton" value="Submit">';
+    }
     const infowindow = new google.maps.InfoWindow({
-        content: options.data
+        content: content
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (marker) {
             ['click', 'idle'].forEach((eventName) =>
                 google.maps.event.clearListeners(marker, eventName)
@@ -35,19 +39,17 @@ const Marker: React.FC<InfoMarkerOptions> = (options) => {
                     anchor: marker,
                     map: options.map,
                     shouldFocus: false
-                })
+                });
             });
         }
     })
   
-    React.useEffect(() => {
+    useEffect(() => {
         if (marker) {
             marker.setOptions(options);
         }
     }, [marker, options]);
 
-    
-  
     return null;
 };
 
