@@ -22,7 +22,6 @@ const App: React.FC = () => {
 	const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
 	let geohash = geofire.geohashForLocation([lat, lng]);
 		setNewMarkers([...newMarkers, new InfoMarker((-(newMarkers.length+1)).toString(), lat, lng, geohash)]);
-		//return data.addMarker(e.latLng?.lat()!, e.latLng?.lng()!, 'Test');
 	};
 
 	const onIdle = async (m: google.maps.Map) => {
@@ -32,7 +31,6 @@ const App: React.FC = () => {
 		let markers = await data.getMarkers([center.lat, center.lng], 5000);
 		setMarkers(markers);
 	};
-
 
 	return (
 		<div style={{ display: "flex", height: "100%" }}>
@@ -46,17 +44,13 @@ const App: React.FC = () => {
 					style={{ flexGrow: "1", height: "100%" }}
 				>
 				{ 
-					newMarkers.map(({ 
-					id, latLng
-					}) => (
-					<Marker key={id} position={latLng}/>
+					newMarkers.map((nm) => (
+						<Marker key={nm.id} position={nm.latLng} marker={nm} data={data}/>
 					))
 				}
 				{ 
-					markers.map(({ 
-					id, latLng
-					}) => (
-					<Marker key={id} position={latLng} data={"Test"}/>
+					markers.map((m) => (
+						<Marker key={m.id} position={m.latLng} marker={m} data={data}/>
 					))
 				}
 				</Map>
