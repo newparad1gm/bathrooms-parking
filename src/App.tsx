@@ -5,8 +5,11 @@ import Marker from './Marker';
 import { InfoMarker, Data } from './Data';
 import * as geofire from 'geofire-common';
 import { Form } from './Form';
+import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, User, setPersistence, browserLocalPersistence } from "firebase/auth";
 
-const data = new Data(process.env.REACT_APP_FIREBASE_PROJECT!);
+const data = new Data();
+const provider = new GoogleAuthProvider();
+const auth = getAuth();
 
 const App: React.FC = () => {
 	const mapRef = useRef<google.maps.Map>();
@@ -17,12 +20,31 @@ const App: React.FC = () => {
 	});
 	const [markers, setMarkers] = useState<InfoMarker[]>([]);
 	const [newMarkers, setNewMarkers] = useState<InfoMarker[]>([]);
+	const [user, setUser] = useState<User>();
 
 	const onClick = async (e: google.maps.MapMouseEvent) => {
-	const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
-	let geohash = geofire.geohashForLocation([lat, lng]);
+		const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
+		let geohash = geofire.geohashForLocation([lat, lng]);
 		setNewMarkers([...newMarkers, new InfoMarker((-(newMarkers.length+1)).toString(), lat, lng, geohash)]);
 	};
+
+	useEffect(() => {
+		const setLogin = async () => {
+			let signIn = await getRedirectResult(auth);
+			if (signIn) {
+				const user = signIn.user;
+				const credential = GoogleAuthProvider.credentialFromResult(signIn)
+				localStorage.setItem('user', JSON.stringify(user));
+				localStorage.setItem('token', credential?.idToken!);
+				setUser(user);
+			} else {
+				await setPersistence(auth, browserLocalPersistence);
+				return signInWithRedirect(auth, provider);
+			}
+		}
+		setLogin()
+			.catch(console.error);
+	}, []);
 
 	const onIdle = async (m: google.maps.Map) => {
 		let zoom = m.getZoom()!;
@@ -33,6 +55,7 @@ const App: React.FC = () => {
 	};
 
 	return (
+		user ? 
 		<div style={{ display: "flex", height: "100%" }}>
 			<Wrapper apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY!} libraries={["places"]} render={render}>
 				<Map
@@ -64,6 +87,9 @@ const App: React.FC = () => {
 					mapRef={mapRef}
 				/>
 			</Wrapper>
+		</div> :
+		<div>
+			<h1>Please Log In</h1>
 		</div>
 	);
 }

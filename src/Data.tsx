@@ -1,21 +1,27 @@
 
-import firebase from 'firebase/app';
-import 'firebase/firestore';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore, collection, addDoc, query, orderBy, startAt, endAt, getDocs } from 'firebase/firestore';
 import * as geofire from 'geofire-common';
 
 class Data {
-    app: firebase.app.App;
-    db: firebase.firestore.Firestore;
+    app: FirebaseApp;
+    db: Firestore;
 
-    constructor(projectId: string) {
-        this.app = firebase.initializeApp({
-            projectId: projectId
-        });
-        this.db = firebase.firestore(this.app);
+    constructor() {
+        this.app = initializeApp({
+            apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+            authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+            storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.REACT_APP_FIREBASE_APP_ID,
+            measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+        });          
+        this.db = getFirestore(this.app);
     }
 
     async addMarker(lat: number, lng: number, data: string) {
-        return this.db.collection('markers').add({
+        return addDoc(collection(this.db, 'markers'), {
 			geohash: geofire.geohashForLocation([lat, lng]),
             lat: lat,
             lng: lng,
@@ -27,17 +33,17 @@ class Data {
         const bounds = geofire.geohashQueryBounds(center, radius);
         const promises = [];
         for (const b of bounds) {
-            const q = this.db.collection('markers')
-                .orderBy('geohash')
-                .startAt(b[0])
-                .endAt(b[1]);
+            const q = query(collection(this.db, 'markers'),
+                orderBy('geohash'), 
+                startAt(b[0]), 
+                endAt(b[1])
+            );
           
-            promises.push(q.get());
+            promises.push(getDocs(q));
         }
         
         let snapshots = await Promise.all(promises);
         const markers: InfoMarker[] = [];
-          
         for (const snap of snapshots) {
             for (const doc of snap.docs) {
                 const [id, lat, lng, data, geohash] = [doc.id, doc.get('lat'), doc.get('lng'), doc.get('data'), doc.get('geohash')];

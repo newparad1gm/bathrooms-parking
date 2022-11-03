@@ -6,8 +6,8 @@ import reportWebVitals from './reportWebVitals';
 import { createRoot } from "react-dom/client";
 
 window.addEventListener("DOMContentLoaded", () => {
-  const root = createRoot(document.getElementById("root")!);
-  root.render(<App />);
+	const root = createRoot(document.getElementById("root")!);
+	root.render(<App />);
 });
 
 // If you want to start measuring performance in your app, pass a function
