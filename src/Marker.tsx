@@ -1,12 +1,38 @@
 import React, { useEffect, useState, useRef } from "react";
+import * as ReactDOMServer from "react-dom/server";
+import { User } from "firebase/auth";
 import { Data, InfoMarker } from "./Data";
 
 interface InfoMarkerOptions extends google.maps.MarkerOptions {
-    marker: InfoMarker;
+    infoMarker: InfoMarker;
     data: Data;
+    user: User;
+    isUsers?: boolean;
+    setUserMarkers?: React.Dispatch<React.SetStateAction<InfoMarker[]>>
 }
 
-const Marker: React.FC<InfoMarkerOptions> = (options) => {
+const MarkerContent = (markerId: string, username: string, content?: string, ) => {
+    return (
+        <div>
+            <span id={markerId}>
+                {content}
+            </span>
+            Written By: {username}
+        </div>
+    );
+}
+
+const UserMarkerContent = (markerId: string, content?: string) => {
+    return (
+        <div>
+            <textarea id={`textInput${markerId}`} defaultValue={content}></textarea><br/>
+            <input type="button" id={`saveButton${markerId}`} value="Save"/> <input type="button" id={`deleteButton${markerId}`} value="Delete"/>
+        </div>
+    );
+}
+
+const Marker: React.FC<InfoMarkerOptions> = (options: InfoMarkerOptions) => {
+    const {infoMarker, data, user, isUsers, setUserMarkers} = options;
     const [marker, setMarker] = useState<google.maps.Marker>();
   
     useEffect(() => {
@@ -22,13 +48,58 @@ const Marker: React.FC<InfoMarkerOptions> = (options) => {
         };
     }, [marker]);
 
-    let content = options.marker.data;
-    if (!options.marker.data) {
-        content = `Text: <input type="text" id="textInput${options.marker.id}" size="31" maxlength="31" tabindex="1"/> <input type="button" id="inputButton${options.marker.id}" value="Submit">`;
-    }
     const infowindow = new google.maps.InfoWindow({
-        content: content
+        content: ReactDOMServer.renderToString(isUsers ? 
+            UserMarkerContent(infoMarker.id, infoMarker.data) : 
+            MarkerContent(infoMarker.id, infoMarker.username, infoMarker.data))
     });
+
+    const saveMarker = async (textInput: HTMLInputElement) => {
+        try {
+            const oldId = infoMarker.id;
+            infoMarker.data = textInput.value;
+            let markerId = await data.saveMarker(infoMarker, textInput.value, user);
+            if (markerId) {
+                infoMarker.id = markerId;
+                infoMarker.data = textInput.value;
+                infowindow.setContent(ReactDOMServer.renderToString(UserMarkerContent(infoMarker.id, infoMarker.data)));
+                if (setUserMarkers) {
+                    setUserMarkers(userMarkers => {
+                        const newMarkers = userMarkers.map(um => {
+                            if (um.id == oldId) {
+                                um.id = infoMarker.id;
+                                um.data = infoMarker.data;
+                            }
+                            return um;
+                        });
+                        return newMarkers;
+                    });
+                }
+            } else {
+                throw new Error(`Marker ID ${oldId} not saved`);
+            }
+        } catch (e) {
+            textInput.value = 'Could not save marker';
+            console.error(e);
+        }
+    }
+
+    const deleteMarker = async () => {
+        try {
+            await data.deleteMarker(infoMarker, user);
+            if (setUserMarkers) {
+                setUserMarkers(userMarkers => {
+                    const newMarkers = userMarkers.filter(um => {
+                        return um.id !== infoMarker.id
+                    });
+                    return newMarkers;
+                });
+            }
+        } catch (e) {
+            console.error(`Could not delete marker ${infoMarker.id}`);
+            console.error(e);
+        }
+    }
 
     useEffect(() => {
         if (marker) {
@@ -38,28 +109,25 @@ const Marker: React.FC<InfoMarkerOptions> = (options) => {
             marker.addListener('click', () => {
                 infowindow.open({
                     anchor: marker,
-                    map: options.map,
                     shouldFocus: false
                 });
                 google.maps.event.addListener(infowindow, 'domready', function () {
-                    let button = document.getElementById(`inputButton${options.marker.id}`);
-                    if (button) {
-                        let textInput = document.getElementById(`textInput${options.marker.id}`) as HTMLInputElement;
-                        button.onclick = async () => {
-                            try {
-                                await options.data.addMarker(options.marker.lat, options.marker.lng, textInput!.value);
-                            } catch {
-                                textInput.value = 'Error saving marker';
-                                return;
-                            }
-
-                            infowindow.setContent(textInput.value);
+                    let saveButton = document.getElementById(`saveButton${infoMarker.id}`);
+                    if (saveButton && isUsers) {
+                        saveButton.onclick = async () => {
+                            return saveMarker(document.getElementById(`textInput${infoMarker.id}`) as HTMLInputElement)
+                        }
+                    }
+                    let deleteButton = document.getElementById(`deleteButton${infoMarker.id}`);
+                    if (deleteButton && isUsers) {
+                        deleteButton.onclick = async () => {
+                            return deleteMarker();
                         }
                     }
                 });
             });
         }
-    })
+    });
   
     useEffect(() => {
         if (marker) {

@@ -6,12 +6,12 @@ interface FormProps {
     setZoom: React.Dispatch<React.SetStateAction<number>>;
     center: google.maps.LatLngLiteral; 
     setCenter: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral>>;
-    newMarkers: InfoMarker[]; 
-    setNewMarkers: React.Dispatch<React.SetStateAction<InfoMarker[]>>;
+    userMarkers: InfoMarker[];
     mapRef: React.MutableRefObject<google.maps.Map | undefined>;
 }
 
 export const Form = (prop: FormProps): JSX.Element => {
+    const {zoom, setZoom, center, setCenter, userMarkers, mapRef} = prop;
     const searchInput = useRef<HTMLInputElement>(null);
     const [geocoder, setGeocoder] = useState<google.maps.Geocoder>();
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete>();
@@ -33,7 +33,7 @@ export const Form = (prop: FormProps): JSX.Element => {
     }, [searchInput, geocoder, autocomplete]);
 
     useEffect(() => {
-        if (autocomplete && prop.mapRef.current) {
+        if (autocomplete && mapRef.current) {
             autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
                 if (!place.geometry || !place.geometry.location) {
@@ -43,14 +43,14 @@ export const Form = (prop: FormProps): JSX.Element => {
                     return;
                 }
                 if (place.geometry.viewport) {
-                    prop.mapRef.current!.fitBounds(place.geometry.viewport);
+                    mapRef.current!.fitBounds(place.geometry.viewport);
                 } else {
-                    prop.mapRef.current!.setCenter(place.geometry.location);
-                    prop.mapRef.current!.setZoom(17);
+                    mapRef.current!.setCenter(place.geometry.location);
+                    mapRef.current!.setZoom(17);
                 }
             });
         }
-    }, [autocomplete, prop.mapRef]);
+    }, [autocomplete, mapRef]);
 
     const search = async () => {
         if (searchInput.current && geocoder) {
@@ -72,8 +72,8 @@ export const Form = (prop: FormProps): JSX.Element => {
                 type="number"
                 id="zoom"
                 name="zoom"
-                value={prop.zoom}
-                onChange={(event) => prop.setZoom(Number(event.target.value))}
+                value={zoom}
+                onChange={(event) => setZoom(Number(event.target.value))}
             />
             <br />
             <label htmlFor="lat">Latitude</label>
@@ -81,9 +81,9 @@ export const Form = (prop: FormProps): JSX.Element => {
                 type="number"
                 id="lat"
                 name="lat"
-                value={prop.center.lat}
+                value={center.lat}
                 onChange={(event) =>
-                    prop.setCenter({ ...prop.center, lat: Number(event.target.value) })
+                    setCenter({ ...center, lat: Number(event.target.value) })
                 }
             />
             <br />
@@ -92,9 +92,9 @@ export const Form = (prop: FormProps): JSX.Element => {
                 type="number"
                 id="lng"
                 name="lng"
-                value={prop.center.lng}
+                value={center.lng}
                 onChange={(event) =>
-                    prop.setCenter({ ...prop.center, lng: Number(event.target.value) })
+                    setCenter({ ...center, lng: Number(event.target.value) })
                 }
             />
             <br />
@@ -115,14 +115,16 @@ export const Form = (prop: FormProps): JSX.Element => {
                     async () => { 
                         let res = await search();
                         alert(JSON.stringify(res)); 
-                }
+                    }
                 }
             />
-            <h3>{prop.newMarkers.length === 0 ? "Click on map to add markers" : "Clicks"}</h3>
-            {prop.newMarkers.map((marker, i) => (
-                <pre key={i}>{marker.geohash}</pre>
+            <h3>{userMarkers.length === 0 ? "Click on map to add markers" : "Clicks"}</h3>
+            {userMarkers.map((marker, i) => (
+                <div key={i}>
+                    <pre>{marker.geohash}</pre>
+                    <pre>{marker.data}</pre>
+                </div>
             ))}
-            <button onClick={() => prop.setNewMarkers([])}>Clear</button>
         </div>
     );
 }

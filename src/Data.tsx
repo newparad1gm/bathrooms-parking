@@ -1,7 +1,9 @@
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, collection, addDoc, query, orderBy, startAt, endAt, getDocs } from 'firebase/firestore';
+import { getFirestore, Firestore, collection, addDoc, query, orderBy, startAt, endAt, getDocs, where, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { User } from "firebase/auth";
 import * as geofire from 'geofire-common';
+import { info } from 'console';
 
 class Data {
     app: FirebaseApp;
@@ -20,16 +22,51 @@ class Data {
         this.db = getFirestore(this.app);
     }
 
-    async addMarker(lat: number, lng: number, data: string) {
-        return addDoc(collection(this.db, 'markers'), {
-			geohash: geofire.geohashForLocation([lat, lng]),
-            lat: lat,
-            lng: lng,
-            data: data
-        });
+    verifyNewMarker(infoMarker: InfoMarker): boolean {
+        const parseId = parseInt(infoMarker.id);
+        return !isNaN(parseId) && parseId < 0;
     }
 
-    async getMarkers(center: [number, number], radius: number): Promise<InfoMarker[]> {
+    async saveMarker(infoMarker: InfoMarker, data: string, user: User): Promise<string | undefined> {
+        if (infoMarker.userid == user.uid) {
+            const [lat, lng] = [infoMarker.lat, infoMarker.lng];
+            if (this.verifyNewMarker(infoMarker)) {
+                let doc = await addDoc(collection(this.db, 'markers'), {
+                    geohash: geofire.geohashForLocation([lat, lng]),
+                    lat: lat,
+                    lng: lng,
+                    data: data,
+                    userid: user.uid,
+                    username: user.displayName
+                });
+                return doc.id;
+            }
+            await setDoc(doc(this.db, 'markers', infoMarker.id), {
+                geohash: geofire.geohashForLocation([lat, lng]),
+                lat: lat,
+                lng: lng,
+                data: data,
+                userid: user.uid,
+                username: user.displayName
+            });
+            return infoMarker.id;
+        }
+    }
+
+    async getMarkersForUser(user: User): Promise<InfoMarker[]> {
+        const snap = await getDocs(query(collection(this.db, 'markers'), where('userid', '==', user.uid)));
+        return snap.docs.map(doc => new InfoMarker(
+            doc.id, 
+            doc.get('lat'), 
+            doc.get('lng'), 
+            doc.get('geohash'), 
+            doc.get('userid'), 
+            doc.get('username'),
+            doc.get('data'), 
+        ));
+    }
+
+    async getMarkers(center: [number, number], radius: number, user: User): Promise<InfoMarker[]> {
         const bounds = geofire.geohashQueryBounds(center, radius);
         const promises = [];
         for (const b of bounds) {
@@ -46,29 +83,44 @@ class Data {
         const markers: InfoMarker[] = [];
         for (const snap of snapshots) {
             for (const doc of snap.docs) {
-                const [id, lat, lng, data, geohash] = [doc.id, doc.get('lat'), doc.get('lng'), doc.get('data'), doc.get('geohash')];
+                const [id, lat, lng, data, geohash, userid, username] = [
+                    doc.id, 
+                    doc.get('lat'), 
+                    doc.get('lng'), 
+                    doc.get('data'), 
+                    doc.get('geohash'), 
+                    doc.get('userid'), 
+                    doc.get('username')
+                ];
           
                 // We have to filter out a few false positives due to GeoHash
                 // accuracy, but most will match
                 const distanceInKm = geofire.distanceBetween([lat, lng], center);
                 const distanceInM = distanceInKm * 1000;
-                const newMarker = new InfoMarker(id, lat, lng, geohash, data);
-                if (distanceInM <= radius) {
-                    markers.push(newMarker);
+                if (distanceInM <= radius && userid !== user.uid) {
+                    markers.push(new InfoMarker(id, lat, lng, geohash, userid, username, data));
                 }
             }
         }
         return markers;
     }
+
+    async deleteMarker(infoMarker: InfoMarker, user: User): Promise<void> {
+        if (!this.verifyNewMarker(infoMarker)) {
+            return deleteDoc(doc(this.db, 'markers', infoMarker.id));
+        }
+    }
 }
 
 class InfoMarker {
-    constructor(id: string, lat: number, lng: number, geohash: string, data?: string) {
+    constructor(id: string, lat: number, lng: number, geohash: string, userid: string, username: string, data?: string,) {
         this.id = id;
         this.lat = lat;
         this.lng = lng;
         this.geohash = geohash;
         this.data = data;
+        this.userid = userid;
+        this.username = username;
     }
 
     id: string;
@@ -86,6 +138,9 @@ class InfoMarker {
     data: string | undefined;
 
     geohash: string;
+
+    userid: string;
+    username: string;
 }
 
 export { Data, InfoMarker }

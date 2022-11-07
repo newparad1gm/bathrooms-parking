@@ -19,13 +19,13 @@ const App: React.FC = () => {
 		lng: -74.0060
 	});
 	const [markers, setMarkers] = useState<InfoMarker[]>([]);
-	const [newMarkers, setNewMarkers] = useState<InfoMarker[]>([]);
+	const [userMarkers, setUserMarkers] = useState<InfoMarker[]>([]);
 	const [user, setUser] = useState<User>();
 
 	const onClick = async (e: google.maps.MapMouseEvent) => {
 		const [lat, lng] = [e.latLng?.lat()!, e.latLng?.lng()!];
 		let geohash = geofire.geohashForLocation([lat, lng]);
-		setNewMarkers([...newMarkers, new InfoMarker((-(newMarkers.length+1)).toString(), lat, lng, geohash)]);
+		setUserMarkers([...userMarkers, new InfoMarker((-(userMarkers.length+1)).toString(), lat, lng, geohash, user?.uid!, user?.displayName!)]);
 	};
 
 	useEffect(() => {
@@ -37,6 +37,7 @@ const App: React.FC = () => {
 				localStorage.setItem('user', JSON.stringify(user));
 				localStorage.setItem('token', credential?.idToken!);
 				setUser(user);
+				setUserMarkers(await data.getMarkersForUser(user))
 			} else {
 				await setPersistence(auth, browserLocalPersistence);
 				return signInWithRedirect(auth, provider);
@@ -50,8 +51,10 @@ const App: React.FC = () => {
 		let zoom = m.getZoom()!;
 		setZoom(zoom);
 		setCenter(m.getCenter()!.toJSON());
-		let markers = await data.getMarkers([center.lat, center.lng], 5000);
-		setMarkers(markers);
+		if (user) {
+			let markers = await data.getMarkers([center.lat, center.lng], 5000, user);
+			setMarkers(markers);
+		}
 	};
 
 	return (
@@ -67,13 +70,13 @@ const App: React.FC = () => {
 					style={{ flexGrow: "1", height: "100%" }}
 				>
 				{ 
-					newMarkers.map((nm) => (
-						<Marker key={nm.id} position={nm.latLng} marker={nm} data={data}/>
+					userMarkers.map((nm) => (
+						<Marker key={nm.id} position={nm.latLng} infoMarker={nm} data={data} user={user} isUsers={true} setUserMarkers={setUserMarkers}/>
 					))
 				}
 				{ 
 					markers.map((m) => (
-						<Marker key={m.id} position={m.latLng} marker={m} data={data}/>
+						<Marker key={m.id} position={m.latLng} infoMarker={m} data={data} user={user}/>
 					))
 				}
 				</Map>
@@ -82,8 +85,7 @@ const App: React.FC = () => {
 					setZoom={setZoom}
 					center={center}
 					setCenter={setCenter}
-					newMarkers={newMarkers}
-					setNewMarkers={setNewMarkers}
+					userMarkers={userMarkers}
 					mapRef={mapRef}
 				/>
 			</Wrapper>
