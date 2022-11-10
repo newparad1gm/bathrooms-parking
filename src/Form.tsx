@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { InfoMarker } from './Data';
+import './Form.css';
 
 interface FormProps {
     zoom: number; 
@@ -59,70 +60,57 @@ export const Form = (prop: FormProps): JSX.Element => {
     }
 
     return (
-        <div
-          style={{
-            padding: "1rem",
-            flexBasis: "250px",
-            height: "100%",
-            overflow: "auto",
-          }}
-        >
-            <label htmlFor="zoom">Zoom</label>
-            <input
-                type="number"
-                id="zoom"
-                name="zoom"
-                value={zoom}
-                onChange={(event) => setZoom(Number(event.target.value))}
-            />
-            <br />
-            <label htmlFor="lat">Latitude</label>
-            <input
-                type="number"
-                id="lat"
-                name="lat"
-                value={center.lat}
-                onChange={(event) =>
-                    setCenter({ ...center, lat: Number(event.target.value) })
-                }
-            />
-            <br />
-            <label htmlFor="lng">Longitude</label>
-            <input
-                type="number"
-                id="lng"
-                name="lng"
-                value={center.lng}
-                onChange={(event) =>
-                    setCenter({ ...center, lng: Number(event.target.value) })
-                }
-            />
-            <br />
-            <label htmlFor="search">Search</label>
-            <input
-                type="string"
-                id="search"
-                name="search"
-                ref={searchInput}
-                defaultValue="Enter Address"
-            />
-            <br />
-            <input
-                type="button"
-                id="searchBtn"
-                value="Search"
-                onClick={
-                    async () => { 
-                        let res = await search();
-                        alert(JSON.stringify(res)); 
+        <div className='form'>
+            <div className='form-line'>
+                <label htmlFor="zoom" className='form-text'>Zoom</label>
+                <input
+                    type="number"
+                    id="zoom"
+                    name="zoom"
+                    value={zoom}
+                    onChange={(event) => setZoom(Number(event.target.value))}
+                />
+            </div>
+            <div className='form-line'>
+                <label htmlFor="lat" className='form-text'>Latitude</label>
+                <input
+                    type="number"
+                    id="lat"
+                    name="lat"
+                    value={center.lat}
+                    onChange={(event) =>
+                        setCenter({ ...center, lat: Number(event.target.value) })
                     }
-                }
-            />
-            <h3>{userMarkers.length === 0 ? "Click on map to add markers" : "Clicks"}</h3>
+                />
+            </div>
+            <div className='form-line'>
+                <label htmlFor="lng" className='form-text'>Longitude</label>
+                <input
+                    type="number"
+                    id="lng"
+                    name="lng"
+                    value={center.lng}
+                    onChange={(event) =>
+                        setCenter({ ...center, lng: Number(event.target.value) })
+                    }
+                />
+            </div>
+            <div className='form-search'>
+                <input
+                    type="string"
+                    id="search"
+                    name="search"
+                    ref={searchInput}
+                    placeholder="Enter Address"
+                    style={{
+                        width:'100%'
+                    }}
+                />
+            </div>
+            <h3>{userMarkers.length === 0 ? "Click on map to add markers" : "Your Markers"}</h3>
             {userMarkers.map((marker, i) => (
-                <div key={i}>
-                    <pre>{marker.geohash}</pre>
-                    <pre>{marker.data}</pre>
+                <div key={i} onClick={() => { {mapRef.current?.panTo(marker.latLng)} }}>
+                    {marker.data}
                 </div>
             ))}
         </div>

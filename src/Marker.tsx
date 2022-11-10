@@ -14,9 +14,9 @@ interface InfoMarkerOptions extends google.maps.MarkerOptions {
 const MarkerContent = (markerId: string, username: string, content?: string, ) => {
     return (
         <div>
-            <span id={markerId}>
+            <div id={markerId}>
                 {content}
-            </span>
+            </div><br/>
             Written By: {username}
         </div>
     );
