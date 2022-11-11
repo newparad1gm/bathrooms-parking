@@ -7,11 +7,12 @@ interface InfoMarkerOptions extends google.maps.MarkerOptions {
     infoMarker: InfoMarker;
     data: Data;
     user: User;
+    geocoder?: google.maps.Geocoder;
     isUsers?: boolean;
     setUserMarkers?: React.Dispatch<React.SetStateAction<InfoMarker[]>>
 }
 
-const MarkerContent = (markerId: string, username: string, content?: string, ) => {
+const MarkerContent = (markerId: string, username: string, content?: string) => {
     return (
         <div>
             <div id={markerId}>

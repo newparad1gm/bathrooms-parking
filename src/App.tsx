@@ -5,7 +5,7 @@ import Marker from './Marker';
 import { InfoMarker, Data } from './Data';
 import * as geofire from 'geofire-common';
 import { Form } from './Form';
-import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, User, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, User, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
 
 const data = new Data();
 const provider = new GoogleAuthProvider();
@@ -28,20 +28,26 @@ const App: React.FC = () => {
 		setUserMarkers([...userMarkers, new InfoMarker((-(userMarkers.length+1)).toString(), lat, lng, geohash, user?.uid!, user?.displayName!)]);
 	};
 
+	const setCurrentUser = async (user: User) => {
+		setUser(user);
+		setUserMarkers(await data.getMarkersForUser(user));
+	}
+
 	useEffect(() => {
 		const setLogin = async () => {
-			let signIn = await getRedirectResult(auth);
-			if (signIn) {
-				const user = signIn.user;
-				const credential = GoogleAuthProvider.credentialFromResult(signIn)
-				localStorage.setItem('user', JSON.stringify(user));
-				localStorage.setItem('token', credential?.idToken!);
-				setUser(user);
-				setUserMarkers(await data.getMarkersForUser(user))
-			} else {
-				await setPersistence(auth, browserLocalPersistence);
-				return signInWithRedirect(auth, provider);
-			}
+			onAuthStateChanged(auth, async (user) => {
+				if (user) {
+					return setCurrentUser(user);
+				} else {
+					let signIn = await getRedirectResult(auth);
+					if (signIn) {
+						return setCurrentUser(signIn.user);
+					} else {
+						await setPersistence(auth, browserLocalPersistence);
+						return signInWithRedirect(auth, provider);
+					}
+				}
+			});
 		}
 		setLogin()
 			.catch(console.error);

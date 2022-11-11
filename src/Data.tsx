@@ -37,7 +37,8 @@ class Data {
                     lng: lng,
                     data: data,
                     userid: user.uid,
-                    username: user.displayName
+                    username: user.displayName,
+                    formattedaddress: infoMarker.formattedaddress
                 });
                 return doc.id;
             }
@@ -47,7 +48,8 @@ class Data {
                 lng: lng,
                 data: data,
                 userid: user.uid,
-                username: user.displayName
+                username: user.displayName,
+                formattedaddress: infoMarker.formattedaddress
             });
             return infoMarker.id;
         }
@@ -63,6 +65,7 @@ class Data {
             doc.get('userid'), 
             doc.get('username'),
             doc.get('data'), 
+            doc.get('formattedaddress')
         ));
     }
 
@@ -83,14 +86,15 @@ class Data {
         const markers: InfoMarker[] = [];
         for (const snap of snapshots) {
             for (const doc of snap.docs) {
-                const [id, lat, lng, data, geohash, userid, username] = [
+                const [id, lat, lng, data, geohash, userid, username, formattedaddress] = [
                     doc.id, 
                     doc.get('lat'), 
                     doc.get('lng'), 
                     doc.get('data'), 
                     doc.get('geohash'), 
                     doc.get('userid'), 
-                    doc.get('username')
+                    doc.get('username'),
+                    doc.get('formattedaddress')
                 ];
           
                 // We have to filter out a few false positives due to GeoHash
@@ -98,7 +102,7 @@ class Data {
                 const distanceInKm = geofire.distanceBetween([lat, lng], center);
                 const distanceInM = distanceInKm * 1000;
                 if (distanceInM <= radius && userid !== user.uid) {
-                    markers.push(new InfoMarker(id, lat, lng, geohash, userid, username, data));
+                    markers.push(new InfoMarker(id, lat, lng, geohash, userid, username, data, formattedaddress));
                 }
             }
         }
@@ -113,7 +117,7 @@ class Data {
 }
 
 class InfoMarker {
-    constructor(id: string, lat: number, lng: number, geohash: string, userid: string, username: string, data?: string,) {
+    constructor(id: string, lat: number, lng: number, geohash: string, userid: string, username: string, data?: string, formattedaddress?: string) {
         this.id = id;
         this.lat = lat;
         this.lng = lng;
@@ -121,6 +125,7 @@ class InfoMarker {
         this.data = data;
         this.userid = userid;
         this.username = username;
+        this.formattedaddress = formattedaddress;
     }
 
     id: string;
@@ -141,6 +146,8 @@ class InfoMarker {
 
     userid: string;
     username: string;
+
+    formattedaddress?: string
 }
 
 export { Data, InfoMarker }

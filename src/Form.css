@@ -18,3 +18,12 @@
   padding-top: 10px;
   display: inline-block;
 }
+
+.marker-entry {
+  padding: 10px;
+}
+
+.marker-entry:hover {
+  background-color: aqua;
+  cursor:pointer
+}
