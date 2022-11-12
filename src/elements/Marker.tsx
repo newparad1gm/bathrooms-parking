@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import * as ReactDOMServer from "react-dom/server";
 import { User } from "firebase/auth";
-import { Data, InfoMarker } from "./Data";
+import { InfoMarker } from "../data/InfoMarker";
+import { Data } from "../data/Data";
 
-interface InfoMarkerOptions extends google.maps.MarkerOptions {
+interface MarkerOptions extends google.maps.MarkerOptions {
     infoMarker: InfoMarker;
     data: Data;
     user: User;
@@ -12,7 +13,7 @@ interface InfoMarkerOptions extends google.maps.MarkerOptions {
     setUserMarkers?: React.Dispatch<React.SetStateAction<InfoMarker[]>>
 }
 
-const MarkerContent = (markerId: string, username: string, content?: string) => {
+const MarkerContent = (markerId: string, username: string, content?: string): JSX.Element => {
     return (
         <div>
             <div id={markerId}>
@@ -23,7 +24,7 @@ const MarkerContent = (markerId: string, username: string, content?: string) => 
     );
 }
 
-const UserMarkerContent = (markerId: string, content?: string) => {
+const UserMarkerContent = (markerId: string, content?: string): JSX.Element => {
     return (
         <div>
             <textarea id={`textInput${markerId}`} defaultValue={content}></textarea><br/>
@@ -32,7 +33,7 @@ const UserMarkerContent = (markerId: string, content?: string) => {
     );
 }
 
-const Marker: React.FC<InfoMarkerOptions> = (options: InfoMarkerOptions) => {
+const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
     const {infoMarker, data, user, isUsers, setUserMarkers} = options;
     const [marker, setMarker] = useState<google.maps.Marker>();
   

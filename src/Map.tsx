@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import './App.css';
 import { createCustomEqual, TypeEqualityComparator, deepEqual } from 'fast-equals';
 import { isLatLngLiteral } from '@googlemaps/typescript-guards';
 

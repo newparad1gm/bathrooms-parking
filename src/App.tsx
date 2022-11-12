@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import Map from './Map';
-import Marker from './Marker';
-import { InfoMarker, Data } from './Data';
+import Marker from './elements/Marker';
+import { Data } from './data/Data';
+import { InfoMarker } from './data/InfoMarker';
 import * as geofire from 'geofire-common';
 import { Form } from './Form';
 import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, User, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
+import './css/App.css';
 
 const data = new Data();
 const provider = new GoogleAuthProvider();
@@ -57,7 +59,7 @@ const App: React.FC = () => {
 		let zoom = m.getZoom()!;
 		setZoom(zoom);
 		setCenter(m.getCenter()!.toJSON());
-		if (user) {
+		if (user && zoom > 13) {
 			let markers = await data.getMarkers([center.lat, center.lng], 5000, user);
 			setMarkers(markers);
 		}
