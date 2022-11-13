@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import Map from './elements/map';
-import Marker from './elements/marker1';
+import Marker from './elements/marker';
 import { Data } from './data/Data';
 import { Icons } from './data/Icons';
 import { InfoMarker } from './data/InfoMarker';
