@@ -2,6 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createCustomEqual, TypeEqualityComparator, deepEqual } from 'fast-equals';
 import { isLatLngLiteral } from '@googlemaps/typescript-guards';
 
+const mapOptions = {
+    "tilt": 47.5,
+    "heading": 320,
+    "zoom": 18,
+    "mapId": process.env.REACT_APP_GOOGLE_MAP_ID
+}
+
 interface MapProps extends google.maps.MapOptions {
     style: { [key: string]: string };
     mapRef: React.MutableRefObject<google.maps.Map | undefined>;
@@ -23,7 +30,7 @@ const Map: React.FC<MapProps> = ({
   
     useEffect(() => {
         if (ref.current && !map) {
-            const thisMap = new window.google.maps.Map(ref.current, {});
+            const thisMap = new window.google.maps.Map(ref.current, mapOptions);
             setMap(thisMap);
             mapRef.current = thisMap;
         }
@@ -34,7 +41,7 @@ const Map: React.FC<MapProps> = ({
             map.setOptions(options);
         }
     }, [map, options]);
-  
+
     useEffect(() => {
         if (map) {
             ['click', 'idle'].forEach((eventName) =>
@@ -63,7 +70,7 @@ const Map: React.FC<MapProps> = ({
         </>
     );
 };
-  
+
 const areMapsEqual: TypeEqualityComparator<any, undefined> = (
     a,
     b,

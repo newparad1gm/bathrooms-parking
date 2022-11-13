@@ -61,8 +61,9 @@ export const Form = (prop: FormProps): JSX.Element => {
 
     return (
         <div className='form'>
+        <div className='form-line'><label>Zoom to at least level 13 to view other markers</label></div>
             <div className='form-line'>
-                <label htmlFor="zoom" className='form-text'>Zoom</label>
+                <label htmlFor="zoom" className='form-text'>Zoom:</label>
                 <input
                     type="number"
                     id="zoom"
@@ -72,7 +73,7 @@ export const Form = (prop: FormProps): JSX.Element => {
                 />
             </div>
             <div className='form-line'>
-                <label htmlFor="lat" className='form-text'>Latitude</label>
+                <label htmlFor="lat" className='form-text'>Latitude:</label>
                 <input
                     type="number"
                     id="lat"
@@ -84,7 +85,7 @@ export const Form = (prop: FormProps): JSX.Element => {
                 />
             </div>
             <div className='form-line'>
-                <label htmlFor="lng" className='form-text'>Longitude</label>
+                <label htmlFor="lng" className='form-text'>Longitude:</label>
                 <input
                     type="number"
                     id="lng"
@@ -95,6 +96,7 @@ export const Form = (prop: FormProps): JSX.Element => {
                     }
                 />
             </div>
+            <div className='form-line'><label>Hold Shift and move mouse to rotate and tilt</label></div>
             <Searchbox mapRef={mapRef}></Searchbox>
             <h3>{userMarkers.length === 0 ? "Click on map to add markers" : "Your Markers"}</h3>
             {userMarkers.map((marker, i) => (
