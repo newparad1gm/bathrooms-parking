@@ -1,6 +1,6 @@
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, collection, addDoc, query, orderBy, startAt, endAt, getDocs, where, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { Firestore, collection, addDoc, query, orderBy, startAt, endAt, getDocs, where, setDoc, doc, deleteDoc, initializeFirestore } from 'firebase/firestore';
 import { User } from "firebase/auth";
 import { InfoMarker } from './InfoMarker';
 import * as geofire from 'geofire-common';
@@ -19,7 +19,7 @@ export class Data {
             appId: process.env.REACT_APP_FIREBASE_APP_ID,
             measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
         });          
-        this.db = getFirestore(this.app);
+        this.db = initializeFirestore(this.app, { ignoreUndefinedProperties: true });
     }
 
     verifyNewMarker(infoMarker: InfoMarker): boolean {
@@ -28,29 +28,23 @@ export class Data {
     }
 
     async saveMarker(infoMarker: InfoMarker, data: string, user: User): Promise<string | undefined> {
-        if (infoMarker.userid == user.uid) {
+        if (infoMarker.userid === user.uid) {
             const [lat, lng] = [infoMarker.lat, infoMarker.lng];
-            if (this.verifyNewMarker(infoMarker)) {
-                let doc = await addDoc(collection(this.db, 'markers'), {
-                    geohash: geofire.geohashForLocation([lat, lng]),
-                    lat: lat,
-                    lng: lng,
-                    data: data,
-                    userid: user.uid,
-                    username: user.displayName,
-                    formattedaddress: infoMarker.formattedaddress
-                });
-                return doc.id;
-            }
-            await setDoc(doc(this.db, 'markers', infoMarker.id), {
+            const saveMarkerJson = {
                 geohash: geofire.geohashForLocation([lat, lng]),
                 lat: lat,
                 lng: lng,
                 data: data,
                 userid: user.uid,
                 username: user.displayName,
-                formattedaddress: infoMarker.formattedaddress
-            });
+                formattedaddress: infoMarker.formattedaddress,
+                iconurl: infoMarker.iconurl
+            };
+            if (this.verifyNewMarker(infoMarker)) {
+                let doc = await addDoc(collection(this.db, 'markers'), saveMarkerJson);
+                return doc.id;
+            }
+            await setDoc(doc(this.db, 'markers', infoMarker.id), saveMarkerJson);
             return infoMarker.id;
         }
     }
@@ -65,7 +59,8 @@ export class Data {
             doc.get('userid'), 
             doc.get('username'),
             doc.get('data'), 
-            doc.get('formattedaddress')
+            doc.get('formattedaddress'),
+            doc.get('iconurl')
         ));
     }
 
@@ -86,7 +81,7 @@ export class Data {
         const markers: InfoMarker[] = [];
         for (const snap of snapshots) {
             for (const doc of snap.docs) {
-                const [id, lat, lng, data, geohash, userid, username, formattedaddress] = [
+                const [id, lat, lng, data, geohash, userid, username, formattedaddress, iconurl] = [
                     doc.id, 
                     doc.get('lat'), 
                     doc.get('lng'), 
@@ -94,14 +89,15 @@ export class Data {
                     doc.get('geohash'), 
                     doc.get('userid'), 
                     doc.get('username'),
-                    doc.get('formattedaddress')
+                    doc.get('formattedaddress'),
+                    doc.get('iconurl')
                 ];
           
                 // Filter out due to geohash accuracy and not the users markers
                 const distanceInKm = geofire.distanceBetween([lat, lng], center);
                 const distanceInM = distanceInKm * 1000;
                 if (distanceInM <= radius && userid !== user.uid) {
-                    markers.push(new InfoMarker(id, lat, lng, geohash, userid, username, data, formattedaddress));
+                    markers.push(new InfoMarker(id, lat, lng, geohash, userid, username, data, formattedaddress, iconurl));
                 }
             }
         }

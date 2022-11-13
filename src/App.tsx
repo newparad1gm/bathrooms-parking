@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
-import Map from './Map';
-import Marker from './elements/Marker';
+import Map from './elements/map';
+import Marker from './elements/marker1';
 import { Data } from './data/Data';
+import { Icons } from './data/Icons';
 import { InfoMarker } from './data/InfoMarker';
 import * as geofire from 'geofire-common';
-import { Form } from './Form';
+import { Form } from './elements/form';
 import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, User, setPersistence, browserLocalPersistence, onAuthStateChanged } from "firebase/auth";
 import './css/App.css';
 
 const data = new Data();
+const icons = new Icons();
 const provider = new GoogleAuthProvider();
 const auth = getAuth();
 
@@ -79,7 +81,7 @@ const App: React.FC = () => {
 				>
 				{ 
 					userMarkers.map((nm) => (
-						<Marker key={nm.id} position={nm.latLng} infoMarker={nm} data={data} user={user} isUsers={true} setUserMarkers={setUserMarkers}/>
+						<Marker key={nm.id} position={nm.latLng} infoMarker={nm} data={data} user={user} isUsers={true} imageUrls={icons.imageUrls} setUserMarkers={setUserMarkers}/>
 					))
 				}
 				{ 

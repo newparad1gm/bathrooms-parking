@@ -34,7 +34,7 @@ const Map: React.FC<MapProps> = ({
             setMap(thisMap);
             mapRef.current = thisMap;
         }
-    }, [ref, map]);
+    }, [ref, map, mapRef]);
   
     useDeepCompareEffectForMaps(() => {
         if (map) {

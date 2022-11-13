@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { InfoMarker } from '../data/InfoMarker';
-import '../css/Form.css';
+import '../css/form.css';
 
 interface MarkerEntryProps {
     marker: InfoMarker;
@@ -29,7 +29,7 @@ export const MarkerEntry = (prop: MarkerEntryProps): JSX.Element => {
         }
 
         setLocation();
-    }, [markerLocation]);
+    }, [markerLocation, geocoder, marker]);
 
     return (
         <div className='marker-entry' onClick={() => { {mapRef.current?.panTo(marker.latLng)} }}>

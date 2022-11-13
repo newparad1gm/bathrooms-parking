@@ -1,0 +1,37 @@
+.icon-selector {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.icon-selector-selector {
+    height: 100px;
+    width: 200px;
+    overflow-y: auto;
+}
+
+.icon-selector-image {
+    padding: 2px;
+}
+
+.icon-selector-image:hover {
+    background-color: aqua;
+    cursor: pointer;
+}
+
+.select-remove-labels {
+    width: 100%;
+}
+
+.select-icon-label {
+    float: left;
+}
+
+.remove-icon-label {
+    float: right;
+}
+
+.remove-icon-label:hover {
+    cursor: pointer;
+    color: blue;
+    text-decoration-line: underline;
+}

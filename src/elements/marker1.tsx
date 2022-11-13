@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
-import * as ReactDOMServer from "react-dom/server";
 import { User } from "firebase/auth";
 import { InfoMarker } from "../data/InfoMarker";
 import { Data } from "../data/Data";
+import { IconSelector } from './icon-selector';
+import { createRoot } from "react-dom/client";
 
 interface MarkerOptions extends google.maps.MarkerOptions {
     infoMarker: InfoMarker;
     data: Data;
     user: User;
+    imageUrls?: string[];
     geocoder?: google.maps.Geocoder;
     isUsers?: boolean;
     setUserMarkers?: React.Dispatch<React.SetStateAction<InfoMarker[]>>
@@ -24,22 +26,45 @@ const MarkerContent = (markerId: string, username: string, content?: string): JS
     );
 }
 
-const UserMarkerContent = (markerId: string, content?: string): JSX.Element => {
+const UserMarkerContent = (markerId: string, content?: string, imageUrls?: string[], saveClick?: (textInput: HTMLInputElement) => Promise<void>, deleteClick?: () => Promise<void>, iconClick?: (url: string | null) => void): JSX.Element => {
     return (
         <div>
             <textarea id={`textInput${markerId}`} defaultValue={content}></textarea><br/>
-            <input type="button" id={`saveButton${markerId}`} value="Save"/> <input type="button" id={`deleteButton${markerId}`} value="Delete"/>
+            <IconSelector imageUrls={imageUrls} onClick={iconClick}></IconSelector>
+            <input type="button" id={`saveButton${markerId}`} value="Save" onClick={() => { return saveClick && saveClick(document.getElementById(`textInput${markerId}`) as HTMLInputElement); }}/> 
+            <input type="button" id={`deleteButton${markerId}`} value="Delete" onClick={() => { return deleteClick && deleteClick(); }}/>
         </div>
     );
 }
 
-const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
-    const {infoMarker, data, user, isUsers, setUserMarkers} = options;
+const Marker = (options: MarkerOptions) => {
+    const {infoMarker, data, user, imageUrls, isUsers, setUserMarkers} = options;
     const [marker, setMarker] = useState<google.maps.Marker>();
-  
+    const infowindowDiv = document.createElement('div');
+    const root = createRoot(infowindowDiv);
+    let infowindow: google.maps.InfoWindow;
+
+    const selectIcon = (url: string | null) => {
+        if (marker) {
+            if (url) {
+                marker.setIcon({
+                    url: url
+                });
+                infoMarker.iconurl = url;
+            }
+            else {
+                marker.setIcon();
+                infoMarker.iconurl = undefined;
+            }
+        }
+    }
+
     useEffect(() => {
         if (!marker) {
-            setMarker(new google.maps.Marker());
+            const thisMarker = new google.maps.Marker({
+                icon: infoMarker.iconurl
+            });
+            setMarker(thisMarker);
         }
     
         // remove marker from map on unmount
@@ -50,21 +75,16 @@ const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
         };
     }, [marker]);
 
-    const infowindow = new google.maps.InfoWindow({
-        content: ReactDOMServer.renderToString(isUsers ? 
-            UserMarkerContent(infoMarker.id, infoMarker.data) : 
-            MarkerContent(infoMarker.id, infoMarker.username, infoMarker.data))
-    });
-
     const saveMarker = async (textInput: HTMLInputElement) => {
         try {
             const oldId = infoMarker.id;
             infoMarker.data = textInput.value;
             let markerId = await data.saveMarker(infoMarker, textInput.value, user);
-            if (markerId) {
+            if (markerId && infowindow) {
                 infoMarker.id = markerId;
                 infoMarker.data = textInput.value;
-                infowindow.setContent(ReactDOMServer.renderToString(UserMarkerContent(infoMarker.id, infoMarker.data)));
+                root.render(UserMarkerContent(infoMarker.id, infoMarker.data, imageUrls, saveMarker, deleteMarker, selectIcon));
+                infowindow.setContent(infowindowDiv);
                 if (setUserMarkers) {
                     setUserMarkers(userMarkers => {
                         const newMarkers = userMarkers.map(um => {
@@ -77,8 +97,6 @@ const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
                         return newMarkers;
                     });
                 }
-            } else {
-                throw new Error(`Marker ID ${oldId} not saved`);
             }
         } catch (e) {
             textInput.value = 'Could not save marker';
@@ -105,6 +123,19 @@ const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
 
     useEffect(() => {
         if (marker) {
+            root.render(isUsers ? 
+                UserMarkerContent(infoMarker.id, infoMarker.data, imageUrls, saveMarker, deleteMarker, selectIcon) : 
+                MarkerContent(infoMarker.id, infoMarker.username, infoMarker.data)
+            );
+            infowindow = new google.maps.InfoWindow({
+                content: infowindowDiv
+            });
+        }
+    }, [marker]);
+
+    useEffect(() => {
+        if (marker && infowindow) {
+            marker.setOptions(options);
             ['click', 'idle'].forEach((eventName) =>
                 google.maps.event.clearListeners(marker, eventName)
             );
@@ -113,27 +144,7 @@ const Marker: React.FC<MarkerOptions> = (options: MarkerOptions) => {
                     anchor: marker,
                     shouldFocus: false
                 });
-                google.maps.event.addListener(infowindow, 'domready', function () {
-                    let saveButton = document.getElementById(`saveButton${infoMarker.id}`);
-                    if (saveButton && isUsers) {
-                        saveButton.onclick = async () => {
-                            return saveMarker(document.getElementById(`textInput${infoMarker.id}`) as HTMLInputElement)
-                        }
-                    }
-                    let deleteButton = document.getElementById(`deleteButton${infoMarker.id}`);
-                    if (deleteButton && isUsers) {
-                        deleteButton.onclick = async () => {
-                            return deleteMarker();
-                        }
-                    }
-                });
             });
-        }
-    });
-  
-    useEffect(() => {
-        if (marker) {
-            marker.setOptions(options);
         }
     }, [marker, options]);
 

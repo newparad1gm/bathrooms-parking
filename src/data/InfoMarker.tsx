@@ -1,5 +1,5 @@
 export class InfoMarker {
-    constructor(id: string, lat: number, lng: number, geohash: string, userid: string, username: string, data?: string, formattedaddress?: string) {
+    constructor(id: string, lat: number, lng: number, geohash: string, userid: string, username: string, data?: string, formattedaddress?: string, iconurl?: string) {
         this.id = id;
         this.lat = lat;
         this.lng = lng;
@@ -8,6 +8,7 @@ export class InfoMarker {
         this.userid = userid;
         this.username = username;
         this.formattedaddress = formattedaddress;
+        this.iconurl = iconurl;
     }
 
     id: string;
@@ -30,4 +31,6 @@ export class InfoMarker {
     username: string;
 
     formattedaddress?: string
+
+    iconurl?: string
 }

@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import '../css/Form.css';
+import '../css/form.css';
 
-interface SearchboxProps {
+interface SearchBoxProps {
     mapRef: React.MutableRefObject<google.maps.Map | undefined>;
 }
 
-export const Searchbox = (props: SearchboxProps): JSX.Element => {
+export const SearchBox = (props: SearchBoxProps): JSX.Element => {
     const {mapRef} = props;
     const searchInput = useRef<HTMLInputElement>(null);
     const [searchbox, setSearchbox] = useState<google.maps.places.SearchBox>();
@@ -31,7 +31,7 @@ export const Searchbox = (props: SearchboxProps): JSX.Element => {
             const map = mapRef.current;
             searchbox.addListener("places_changed", () => {
                 const places = searchbox.getPlaces();
-                if (!places || places.length == 0) {
+                if (!places || places.length === 0) {
                     return;
                 }
 
