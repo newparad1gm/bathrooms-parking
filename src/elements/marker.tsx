@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { User } from "firebase/auth";
 import { InfoMarker } from "../data/InfoMarker";
 import { Data } from "../data/Data";
@@ -42,7 +42,7 @@ const Marker = (options: MarkerOptions) => {
     const [marker, setMarker] = useState<google.maps.Marker>();
     const infowindowDiv = document.createElement('div');
     const root = createRoot(infowindowDiv);
-    let infowindow: google.maps.InfoWindow;
+    const infowindow = useRef<google.maps.InfoWindow>();
 
     const selectIcon = (url: string | null) => {
         if (marker) {
@@ -73,22 +73,22 @@ const Marker = (options: MarkerOptions) => {
                 marker.setMap(null);
             }
         };
-    }, [marker]);
+    }, [marker, infoMarker.iconurl]);
 
     const saveMarker = async (textInput: HTMLInputElement) => {
         try {
             const oldId = infoMarker.id;
             infoMarker.data = textInput.value;
             let markerId = await data.saveMarker(infoMarker, textInput.value, user);
-            if (markerId && infowindow) {
+            if (markerId && infowindow.current) {
                 infoMarker.id = markerId;
                 infoMarker.data = textInput.value;
                 root.render(UserMarkerContent(infoMarker.id, infoMarker.data, imageUrls, saveMarker, deleteMarker, selectIcon));
-                infowindow.setContent(infowindowDiv);
+                infowindow.current.setContent(infowindowDiv);
                 if (setUserMarkers) {
                     setUserMarkers(userMarkers => {
                         const newMarkers = userMarkers.map(um => {
-                            if (um.id == oldId) {
+                            if (um.id === oldId) {
                                 um.id = infoMarker.id;
                                 um.data = infoMarker.data;
                             }
@@ -123,27 +123,30 @@ const Marker = (options: MarkerOptions) => {
 
     useEffect(() => {
         if (marker) {
+            // renders infowindow content with react root render
             root.render(isUsers ? 
                 UserMarkerContent(infoMarker.id, infoMarker.data, imageUrls, saveMarker, deleteMarker, selectIcon) : 
                 MarkerContent(infoMarker.id, infoMarker.username, infoMarker.data)
             );
-            infowindow = new google.maps.InfoWindow({
+            infowindow.current = new google.maps.InfoWindow({
                 content: infowindowDiv
             });
         }
     }, [marker]);
 
     useEffect(() => {
-        if (marker && infowindow) {
+        if (marker) {
             marker.setOptions(options);
             ['click', 'idle'].forEach((eventName) =>
                 google.maps.event.clearListeners(marker, eventName)
             );
             marker.addListener('click', () => {
-                infowindow.open({
-                    anchor: marker,
-                    shouldFocus: false
-                });
+                if (infowindow.current) {
+                    infowindow.current.open({
+                        anchor: marker,
+                        shouldFocus: false
+                    });
+                }
             });
         }
     }, [marker, options]);

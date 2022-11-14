@@ -37,6 +37,7 @@ const App: React.FC = () => {
 		setUserMarkers(await data.getMarkersForUser(user));
 	}
 
+	// using sign in with redirect and browser local persistence
 	useEffect(() => {
 		const setLogin = async () => {
 			onAuthStateChanged(auth, async (user) => {
@@ -61,7 +62,8 @@ const App: React.FC = () => {
 		let zoom = m.getZoom()!;
 		setZoom(zoom);
 		setCenter(m.getCenter()!.toJSON());
-		if (user && zoom > 13) {
+		if (user && zoom >= 13) {
+			// defaulting to radius of 5000m for geohash lookup
 			let markers = await data.getMarkers([center.lat, center.lng], 5000, user);
 			setMarkers(markers);
 		}

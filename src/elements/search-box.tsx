@@ -9,7 +9,7 @@ export const SearchBox = (props: SearchBoxProps): JSX.Element => {
     const {mapRef} = props;
     const searchInput = useRef<HTMLInputElement>(null);
     const [searchbox, setSearchbox] = useState<google.maps.places.SearchBox>();
-    let searchMarkers: google.maps.Marker[] = [];
+    const searchMarkers = useRef<google.maps.Marker[]>([]);
 
     useEffect(() => {
         if (searchInput.current) {
@@ -35,10 +35,10 @@ export const SearchBox = (props: SearchBoxProps): JSX.Element => {
                     return;
                 }
 
-                for (let searchMarker of searchMarkers) {
+                for (let searchMarker of searchMarkers.current) {
                     searchMarker.setMap(null);
                 }
-                searchMarkers = [];
+                searchMarkers.current = [];
 
                 const bounds = new google.maps.LatLngBounds();
                 for (let place of places) {
@@ -55,7 +55,7 @@ export const SearchBox = (props: SearchBoxProps): JSX.Element => {
                         scaledSize: new google.maps.Size(25, 25),
                     }
 
-                    searchMarkers.push(
+                    searchMarkers.current.push(
                         new google.maps.Marker({
                             map,
                             icon,
